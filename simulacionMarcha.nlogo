@@ -1,18 +1,20 @@
-breed [ estudiantes estudiante ]  ;
-breed [ policias policia ]
 
 turtles-own
 [
-  energy
+
+  compañero-cercano
+  compañeros ;;compañeros de la bandada
+  energy     ;;energia de cada persona
   infilrado? ;;si es true, es un estudiante infiltradro
   lider? ;;si es lider
-  ;;en grupos la energia se mantiene.
-  ;;lider
-  banda
+
 ]
 
+breed [ estudiantes estudiante ]  ;
+breed [ policias policia ]
+
 estudiantes-own [
-  pintura
+  pintura   ;;random show 2 (0,1)
   resistencia
 ]
 policias-own [
@@ -31,31 +33,28 @@ to setup
 
   create-estudiantes nEstudiantes
   [set shape "person" set color green set size 1.5
-    setxy (random -15) - 25
+    setxy (random -13) - 20
     (random 5) - 2
 
-    set heading 1]
+    set heading 1
+
+  ]
 end
 
 to setup-camino ;; patch procedure
   if pycor < 5 and pycor > -5 [ set pcolor white ]
 end
 
-
-
-
-to create-or-remove-people
-
-  create-turtles (nEstudiantes - count turtles) [
-    set color estudiante-color
-    ;move-to one-of free road-patches
-    ;set target-lane pycor
-    ;set heading 90
-    ;set top-speed 0.5 + random-float 0.5
-    ;set speed 0.5
-    ;set patience random max-patience
-  ]
+to encontrar-compañeros
+  set compañeros other estudiantes in-radius resistenciaEstudiantil ;;esta podra ser la resistencia
 end
+
+to encontrar-compañero-cercano
+  set compañero-cercano min-one-of compañeros [distance myself]
+end
+
+
+
 
 to-report estudiante-color
   report green
@@ -97,17 +96,17 @@ nEstudiantes
 nEstudiantes
 0
 100
-95.0
+57.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-23
-168
-210
-201
+26
+340
+213
+373
 nEsmad
 nEsmad
 0
@@ -134,10 +133,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-23
-212
-211
-245
+26
+384
+214
+417
 toleranciaEsmad
 toleranciaEsmad
 0
@@ -164,10 +163,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-24
-259
-97
-292
+27
+431
+100
+464
 NIL
 setup
 NIL
@@ -179,6 +178,21 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+22
+140
+235
+173
+p_PinturaCada10
+p_PinturaCada10
+0
+10
+0.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -522,7 +536,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
