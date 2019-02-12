@@ -1,3 +1,8 @@
+globals[
+  destino-patches ;; agentset de cuadrilla azul, que representa el final de la marcha
+
+]
+
 
 turtles-own
 [
@@ -26,24 +31,50 @@ policias-own [
 to setup
   clear-all
   ask patches [ setup-camino ]
+  reset-ticks
 
+  ;;create el destino
+  set destino-patches patches with [(pycor < 5 and pycor > -5) and (pxcor > 26)  ] ;; define los patches destino que llegara la marcha
+  ask destino-patches [set pcolor blue]
+
+  ;;CREATE POLICIAS
   create-policias nEsmad  ; create the wolves, then initialize their variables
-  [set shape "wolf" set color red set size 2
+  [set shape "wolf" set color policia-color set size 2
     setxy random-xcor random-ycor ]
 
+
+  ;;CREATE ESTUDIANTES
   create-estudiantes nEstudiantes
-  [set shape "person" set color green set size 1.5
+  [set shape "person" set color estudiante-color set size 1.5
     setxy (random -13) - 20
     (random 5) - 2
 
     set heading 1
 
   ]
+
+
+  ;;
 end
+
 
 to setup-camino ;; patch procedure
   if pycor < 5 and pycor > -5 [ set pcolor white ]
 end
+
+to go
+
+
+;;ask turtles [caminar]
+tick
+end
+
+
+to caminar
+
+
+end
+
 
 to encontrar-compañeros
   set compañeros other estudiantes in-radius resistenciaEstudiantil ;;esta podra ser la resistencia
@@ -54,20 +85,22 @@ to encontrar-compañero-cercano
 end
 
 
-
-
 to-report estudiante-color
   report green
+end
+
+to-report policia-color
+  report red
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
 264
-25
-781
-292
+16
+1170
+481
 -1
 -1
-7.831
+13.82
 1
 10
 1
@@ -193,6 +226,23 @@ p_PinturaCada10
 1
 NIL
 HORIZONTAL
+
+BUTTON
+114
+432
+177
+465
+NIL
+go
+T
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
