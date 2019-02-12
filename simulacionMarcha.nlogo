@@ -1,5 +1,9 @@
 globals[
   destino-patches ;; agentset de cuadrilla azul, que representa el final de la marcha
+  camino-patches
+  grid-x-inc               ;; the amount of patches in between two roads in the x direction
+  grid-y-inc
+  roads
 
 ]
 
@@ -30,12 +34,30 @@ policias-own [
 
 to setup
   clear-all
-  ask patches [ setup-camino ]
+
   reset-ticks
 
+  set grid-x-inc world-width / grid-size-x
+  set grid-y-inc world-height / grid-size-y
+
+  setup-patch
   ;;create el destino
-  set destino-patches patches with [(pycor < 5 and pycor > -5) and (pxcor > 26)  ] ;; define los patches destino que llegara la marcha
+
+  set camino-patches patches with [(pycor < 4 and pycor > -4) or (pycor < 13 and pycor > 8) or (pycor < -8 and pycor > -13) or
+                                   (pxcor < -35 and pxcor > -40) or (pxcor < -5 and pxcor > -10) or (pxcor < 20 and pxcor > 15)
+                                    or (pxcor < 40 and pxcor > 35)
+                                   ]
+  ask camino-patches [set pcolor white]
+
+  set destino-patches patches with [
+    ((pycor < 4  and pycor > -4) and (pxcor > 55))
+
+
+
+
+  ] ;; define los patches destino que llegara la marcha
   ask destino-patches [set pcolor blue]
+
 
   ;;CREATE POLICIAS
   create-policias nEsmad  ; create the wolves, then initialize their variables
@@ -46,7 +68,7 @@ to setup
   ;;CREATE ESTUDIANTES
   create-estudiantes nEstudiantes
   [set shape "person" set color estudiante-color set size 1.5
-    setxy (random -13) - 20
+    setxy (random -10) - 54
     (random 5) - 2
 
     set heading 1
@@ -58,10 +80,6 @@ to setup
 end
 
 
-to setup-camino ;; patch procedure
-  if pycor < 5 and pycor > -5 [ set pcolor white ]
-end
-
 to go
 
 
@@ -70,7 +88,13 @@ tick
 end
 
 
-to caminar
+to setup-patch
+  ;set roads patches with
+   ; [(floor((pxcor + max-pxcor - floor(grid-x-inc - 50)) mod grid-x-inc) = 0) or
+    ;(floor((pycor + max-pycor - floor(grid-y-inc - 50)) mod grid-y-inc) = 0)]
+
+
+  ;ask roads [ set pcolor white ]
 
 
 end
@@ -94,26 +118,26 @@ to-report policia-color
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-264
-16
-1170
-481
+290
+36
+1124
+358
 -1
 -1
-13.82
+6.403101
 1
 10
 1
 1
 1
 0
+0
+0
 1
-1
-1
--32
-32
--16
-16
+-64
+64
+-24
+24
 0
 0
 1
@@ -243,6 +267,36 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+24
+183
+116
+216
+grid-size-x
+grid-size-x
+1
+5
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+120
+185
+236
+218
+grid-size-y
+grid-size-y
+1
+6
+3.0
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
