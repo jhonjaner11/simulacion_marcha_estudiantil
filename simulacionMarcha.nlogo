@@ -4,6 +4,8 @@ globals[
   grid-x-inc               ;; the amount of patches in between two roads in the x direction
   grid-y-inc
   roads
+  x_destino
+  y_destino
 
 ]
 
@@ -40,6 +42,8 @@ to setup
   set grid-x-inc world-width / grid-size-x
   set grid-y-inc world-height / grid-size-y
 
+  set x_destino 60
+  set y_destino 0
   setup-patch
   ;;create el destino
 
@@ -98,6 +102,7 @@ to setup-patch
 
 
 end
+
 
 
 to encontrar-compañeros
