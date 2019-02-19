@@ -1,14 +1,36 @@
+;;hey yo! this simulation was create by JOHN
+
 globals[
   destino-patches ;; agentset de cuadrilla azul, que representa el final de la marcha
   camino-patches
   grid-x-inc               ;; the amount of patches in between two roads in the x direction
   grid-y-inc
   roads
-  x_destino
-  y_destino
+  x-destino
+  y-destino
+
+  n_carreras
+  n_calles
+
+  arriba
+  abajo
+  izquierda
+  derecha
 
 ]
+patches-own [
 
+  q_calle?
+  q_carrera?
+  q_bloque?
+  ;;esFinal?
+
+  e_gaseado?  ;;estado gaseado gris
+  e_pintado?  ;;estado pintado purple
+
+
+  rutaDestino
+]
 
 turtles-own
 [
@@ -16,8 +38,6 @@ turtles-own
   compañero-cercano
   compañeros ;;compañeros de la bandada
   energy     ;;energia de cada persona
-  infilrado? ;;si es true, es un estudiante infiltradro
-  lider? ;;si es lider
 
 ]
 
@@ -27,23 +47,33 @@ breed [ policias policia ]
 estudiantes-own [
   pintura   ;;random show 2 (0,1)
   resistencia
+  infiltrado
+  lider
+  contador
 ]
 policias-own [
 
   tolerancia
-
+  enojado? ;;si esta enojado por culpa gracias a su nivel de tolerancia
 ]
+
 
 to setup
   clear-all
 
   reset-ticks
 
-  set grid-x-inc world-width / grid-size-x
-  set grid-y-inc world-height / grid-size-y
+  set n_calles int (world-width / calles - 1)
+  set n_carreras int (world-height / carreras - 1)
 
-  set x_destino 60
-  set y_destino 0
+  set x-destino 60
+  set y-destino 0
+
+  set arriba 0
+  set abajo 180
+  set izquierda 270
+  set derecha 90
+
   setup-patch
   ;;create el destino
 
@@ -93,6 +123,38 @@ end
 
 
 to setup-patch
+
+  ask patches [
+
+  ;;esFinal?
+
+  e_gaseado?  ;;estado gaseado gris
+  e_pintado?
+    set q_bloque? true
+
+    set q_calle? false
+    set q_carrera? false
+    set e_pintado? false
+    set q_bloque? false
+    set nivelGas 0
+    set nivelFuego 0
+    set rutaMarcha 0
+
+    if ((pxcor mod n_calles < 5) or (pxcor >= world-width - ancho-calzada))[
+      set esCalle? true
+      set esCasa? false
+    ]
+
+    if ((pycor mod n_carreras < 5 ) or (pycor >= world-height - ancho-calzada))[
+      set esCarrera? true
+      set esCasa? false
+    ]
+
+    if(pxcor >= final-x and pycor >= final-y)[
+      set esFinal? true
+      set esCasa? false
+    ]
+  ]
   ;set roads patches with
    ; [(floor((pxcor + max-pxcor - floor(grid-x-inc - 50)) mod grid-x-inc) = 0) or
     ;(floor((pycor + max-pycor - floor(grid-y-inc - 50)) mod grid-y-inc) = 0)]
@@ -158,7 +220,7 @@ nEstudiantes
 nEstudiantes
 0
 100
-57.0
+18.0
 1
 1
 NIL
@@ -171,10 +233,10 @@ SLIDER
 373
 nEsmad
 nEsmad
-0
+1
 30
 12.0
-1
+3
 1
 NIL
 HORIZONTAL
@@ -278,11 +340,11 @@ SLIDER
 183
 116
 216
-grid-size-x
-grid-size-x
+calles
+calles
 1
-5
-2.0
+6
+1.0
 1
 1
 NIL
@@ -293,8 +355,8 @@ SLIDER
 185
 236
 218
-grid-size-y
-grid-size-y
+carreras
+carreras
 1
 6
 3.0
@@ -645,7 +707,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.2
+NetLogo 6.0.4
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
