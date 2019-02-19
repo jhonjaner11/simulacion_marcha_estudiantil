@@ -45,9 +45,9 @@ breed [ estudiantes estudiante ]  ;
 breed [ policias policia ]
 
 estudiantes-own [
-  pintura   ;;random show 2 (0,1)
+  pintura?   ;;random show 2 (0,1)
   resistencia
-  infiltrado
+  infiltrado?
   lider
   contador
 ]
@@ -77,11 +77,11 @@ to setup
   setup-patch
   ;;create el destino
 
-  set camino-patches patches with [(pycor < 4 and pycor > -4) or (pycor < 13 and pycor > 8) or (pycor < -8 and pycor > -13) or
-                                   (pxcor < -35 and pxcor > -40) or (pxcor < -5 and pxcor > -10) or (pxcor < 20 and pxcor > 15)
-                                    or (pxcor < 40 and pxcor > 35)
-                                   ]
-  ask camino-patches [set pcolor white]
+  ;;set camino-patches patches with [(pycor < 4 and pycor > -4) or (pycor < 13 and pycor > 8) or (pycor < -8 and pycor > -13) or
+    ;;                               (pxcor < -35 and pxcor > -40) or (pxcor < -5 and pxcor > -10) or (pxcor < 20 and pxcor > 15)
+      ;;                              or (pxcor < 40 and pxcor > 35)
+           ;;                        ]
+  ;;ask camino-patches [set pcolor white]
 
   set destino-patches patches with [
     ((pycor < 4  and pycor > -4) and (pxcor > 55))
@@ -96,20 +96,26 @@ to setup
   ;;CREATE POLICIAS
   create-policias nEsmad  ; create the wolves, then initialize their variables
   [set shape "wolf" set color policia-color set size 2
-    setxy random-xcor random-ycor ]
+
+    ifelse(random 4 > 1)[setxy -64  ((random -5) - 10)]
+    [ifelse(random 3 > 1)[setxy random 5 23][setxy 62 random -3 - 12]]
+     ]
 
 
   ;;CREATE ESTUDIANTES
   create-estudiantes nEstudiantes
   [set shape "person" set color estudiante-color set size 1.5
-    setxy (random -10) - 54
-    (random 5) - 2
+    set resistencia true ;;100
+    setxy ((random -10) - 54) ((random -5) - 10)
+    ;;setxy (random -10) - 54
+    ;;(random 5) - 2
 
-    set heading 1
+    set heading 1 ;;giran a la izquierda
 
+
+  ifelse (random 100 < porc_pintura) [set pintura? true] [set pintura? false ]
+  ifelse (random 100 < porc_infiltrados)[set infiltrado? true][set pintura? false]
   ]
-
-
   ;;
 end
 
@@ -126,34 +132,27 @@ to setup-patch
 
   ask patches [
 
-  ;;esFinal?
 
-  e_gaseado?  ;;estado gaseado gris
-  e_pintado?
     set q_bloque? true
-
     set q_calle? false
     set q_carrera? false
     set e_pintado? false
-    set q_bloque? false
-    set nivelGas 0
-    set nivelFuego 0
-    set rutaMarcha 0
+    set e_gaseado? false
+    ;;set nivelGas 0
+    ;;set nivelFuego 0
+    set roads 0
 
-    if ((pxcor mod n_calles < 5) or (pxcor >= world-width - ancho-calzada))[
-      set esCalle? true
-      set esCasa? false
+    if ((pxcor mod n_calles < 5) or (pxcor >= world-width - 5))[
+      set q_calle? true
+      set q_bloque? false
     ]
 
-    if ((pycor mod n_carreras < 5 ) or (pycor >= world-height - ancho-calzada))[
-      set esCarrera? true
-      set esCasa? false
+    if ((pycor mod n_carreras < 5 ) or (pycor >= world-height - 5))[
+      set q_carrera? true
+      set q_bloque? false
     ]
 
-    if(pxcor >= final-x and pycor >= final-y)[
-      set esFinal? true
-      set esCasa? false
-    ]
+
   ]
   ;set roads patches with
    ; [(floor((pxcor + max-pxcor - floor(grid-x-inc - 50)) mod grid-x-inc) = 0) or
@@ -161,6 +160,20 @@ to setup-patch
 
 
   ;ask roads [ set pcolor white ]
+  ask patches [
+    if q_calle? [ set pcolor white ]
+    if q_carrera? [ set pcolor white ]
+
+  ;;  ifelse (nivelGas >= nivelFuego)
+    ;;[ if(nivelGas > 0.05) [ set pcolor scale-color yellow nivelGas 0.01 1 ]]
+    ;;[ if(nivelFuego > 0.05) [ set pcolor scale-color red nivelFuego 0.01 1 ]]
+
+    ;;if esFinal? [ set pcolor white ]
+    if q_bloque? [ set pcolor black ]
+    if q_bloque? and e_pintado? [ set pcolor one-of [ blue violet ]]
+    if e_pintado? [ set pcolor magenta ]
+  ]
+
 
 
 end
@@ -220,7 +233,7 @@ nEstudiantes
 nEstudiantes
 0
 100
-18.0
+93.0
 1
 1
 NIL
@@ -235,7 +248,7 @@ nEsmad
 nEsmad
 1
 30
-12.0
+25.0
 3
 1
 NIL
@@ -250,7 +263,7 @@ resistenciaEstudiantil
 resistenciaEstudiantil
 0
 100
-49.0
+0.0
 1
 1
 NIL
@@ -265,7 +278,7 @@ toleranciaEsmad
 toleranciaEsmad
 0
 100
-50.0
+0.0
 1
 1
 NIL
@@ -276,11 +289,11 @@ SLIDER
 98
 237
 131
-nInfiltrados
-nInfiltrados
-0
+porc_infiltrados
+porc_infiltrados
+1
 100
-50.0
+5.0
 1
 1
 NIL
@@ -308,11 +321,11 @@ SLIDER
 140
 235
 173
-p_PinturaCada10
-p_PinturaCada10
-0
-10
-0.0
+porc_pintura
+porc_pintura
+1
+100
+10.0
 1
 1
 NIL
@@ -344,7 +357,7 @@ calles
 calles
 1
 6
-1.0
+3.0
 1
 1
 NIL
@@ -364,6 +377,16 @@ carreras
 1
 NIL
 HORIZONTAL
+
+TEXTBOX
+1162
+65
+1312
+95
+El mundo propuesto es de 3 x 3 cuadros
+12
+0.0
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -707,7 +730,7 @@ false
 Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 @#$#@#$#@
-NetLogo 6.0.4
+NetLogo 6.0.2
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
