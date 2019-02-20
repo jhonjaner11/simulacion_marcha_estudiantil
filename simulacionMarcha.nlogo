@@ -1,11 +1,10 @@
 ;;hey yo! this simulation was create by JOHN
 
 globals[
-  destino-patches ;; agentset de cuadrilla azul, que representa el final de la marcha
-  camino-patches
+
   grid-x-inc               ;; the amount of patches in between two roads in the x direction
   grid-y-inc
-  roads
+
   x-destino
   y-destino
 
@@ -23,23 +22,18 @@ patches-own [
   q_calle?
   q_carrera?
   q_bloque?
-  ;;esFinal?
+  q_final?
 
-  e_gaseado?  ;;estado gaseado gris
-  e_pintado?  ;;estado pintado purple
+  cant_gas  ;;cantidad de gas 0-100%
+  cant_fuego
+
+  e_pintado?
+  e_quemado?  ;;estado pintado purple
 
 
-  rutaDestino
+  roads
 ]
 
-turtles-own
-[
-
-  compañero-cercano
-  compañeros ;;compañeros de la bandada
-  energy     ;;energia de cada persona
-
-]
 
 breed [ estudiantes estudiante ]  ;
 breed [ policias policia ]
@@ -48,11 +42,11 @@ estudiantes-own [
   pintura?   ;;random show 2 (0,1)
   resistencia
   infiltrado?
-  lider
-  contador
+  lider?
+  cont
 ]
 policias-own [
-
+  est_enmira
   tolerancia
   enojado? ;;si esta enojado por culpa gracias a su nivel de tolerancia
 ]
@@ -63,8 +57,8 @@ to setup
 
   reset-ticks
 
-  set n_calles int (world-width / calles - 1)
-  set n_carreras int (world-height / carreras - 1)
+  set n_calles int (world-width / (calles )- 1)
+  set n_carreras int (world-height / (carreras )- 1)
 
   set x-destino 60
   set y-destino 0
@@ -74,7 +68,40 @@ to setup
   set izquierda 270
   set derecha 90
 
-  setup-patch
+  ask patches [
+
+
+    set q_bloque? true
+    set q_calle? false
+    set q_carrera? false
+    set e_pintado? false
+    set e_quemado? false
+    set q_final? false
+
+    set cant_gas 0
+    set cant_fuego 0
+    set roads 0
+
+    if ((pxcor mod n_calles <= 5) or (pxcor >= world-width - 5))[
+      set q_calle? true
+      set q_bloque? false
+
+
+    ]
+
+    if ((pycor mod n_carreras < 5 ) or (pycor >= world-height - 5))[
+      set q_carrera? true
+      set q_bloque? false
+
+
+    ]
+
+    if ((pycor < 4  and pycor > -4) and (pxcor > 55)) [
+      set q_final? true
+      set q_bloque? false
+    ]
+   ]
+
   ;;create el destino
 
   ;;set camino-patches patches with [(pycor < 4 and pycor > -4) or (pycor < 13 and pycor > 8) or (pycor < -8 and pycor > -13) or
@@ -83,96 +110,306 @@ to setup
            ;;                        ]
   ;;ask camino-patches [set pcolor white]
 
-  set destino-patches patches with [
-    ((pycor < 4  and pycor > -4) and (pxcor > 55))
+  ;set destino-patches patches with [
+   ; ((pycor < 4  and pycor > -4) and (pxcor > 55))
 
 
 
 
-  ] ;; define los patches destino que llegara la marcha
-  ask destino-patches [set pcolor blue]
+  ;] ;; define los patches destino que llegara la marcha
+  ;ask destino-patches [set pcolor blue]
 
 
-  ;;CREATE POLICIAS
-  create-policias nEsmad  ; create the wolves, then initialize their variables
-  [set shape "wolf" set color policia-color set size 2
-
-    ifelse(random 4 > 1)[setxy -64  ((random -5) - 10)]
-    [ifelse(random 3 > 1)[setxy random 5 23][setxy 62 random -3 - 12]]
-     ]
+  grafity_EstTodo
 
 
   ;;CREATE ESTUDIANTES
   create-estudiantes nEstudiantes
   [set shape "person" set color estudiante-color set size 1.5
     set resistencia true ;;100
-    setxy ((random -10) - 54) ((random -5) - 10)
+     ;;setxy ((random -10) - 50) ((random -4) - 11)
     ;;setxy (random -10) - 54
     ;;(random 5) - 2
-
+    setxy -59 -13
     set heading 1 ;;giran a la izquierda
 
+  if who = 0[set hidden? true]
 
   ifelse (random 100 < porc_pintura) [set pintura? true] [set pintura? false ]
-  ifelse (random 100 < porc_infiltrados)[set infiltrado? true][set pintura? false]
+  ifelse (random 100 < porc_infiltrados)[set infiltrado? true set color brown][set infiltrado? false]
+
+
   ]
+
+
+    ;;CREATE POLICIAS
+  create-policias nEsmad  ; create the wolves, then initialize their variables
+  [set shape "wolf" set color policia-color set size 4
+
+    ifelse(random 4 > 1)[setxy -64  ((random -5) - 10)]
+    [ifelse(random 4 > 1)[setxy random 5 23][setxy 62 random -3 - 12]]
+
+   set enojado? false
+  ]
+
+  reset-ticks
   ;;
+end
+
+
+to grafity_EstTodo
+
+  ask patches [
+    if q_calle? [ set pcolor white]
+    if q_carrera? [ set pcolor white  ]
+
+    ifelse (cant_gas >= cant_fuego)
+    [ if(cant_gas > 0.05)[set pcolor yellow  ]]
+    [ if(cant_fuego > 0.05)[ set pcolor orange  ]]
+
+    if q_final? [ set pcolor blue ]
+    if q_bloque? [ set pcolor black ]
+
+    if q_bloque? and e_pintado? [ set pcolor one-of [ blue violet ]]
+    if e_pintado? [set pcolor violet]
+
+  ]
 end
 
 
 to go
 
+  if (all? estudiantes [xcor >= x-destino  and ycor >= y-destino])[ stop ]
+
+  ask estudiantes [
+    ifelse (xcor >= x-destino and ycor >= y-destino) [ stop ]
+    [ move_Est grafity_Est actuarInfiltrado ] ]
+
+  ask policias  [ move_Pol ]
+  diffuse cant_gas 0.8
+  diffuse cant_fuego 0.2
+
+  medidas_Peligro
+  grafity_EstTodo
 
 ;;ask turtles [caminar]
 tick
 end
 
+;;-------------------------------------------------------
+to move_Est
+  if who >= ticks [ stop ]
+  ifelse (not resistencia and who != 0)[ die ][
+    ifelse  [cant_gas]  of patch-here > 0.01
+    [ correr ]
+    [
+      ;;ifelse who = 0 ;;
+      ifelse who = 0
+      [
+        ir_lugar x-destino y-destino
+        crearRuta
+      ]
+      [ seguirEstCero ]
+    ]
+
+  ]
+end
+
+
+to ir_lugar [ posx posy ]
+  facexy posx posy
+  caminar heading (random 100 < 50)
+end
+
+to crearRuta
+  set cont (cont + 1)
+  let contador (cont)
+  ask patch-here [set roads contador]
+end
+
+to medidas_Peligro
+ask patches
+  [
+    if (cant_fuego > 0.05) [set e_quemado? true ]
+    set cant_gas cant_gas * 0.8
+    set cant_fuego cant_fuego * 0.7
+    ;set rutaMarcha rutaMarcha * 0.7
+  ]
+
+end
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;SEGUIR AL PRIMER ESTUDIANTE = CERO
+to seguirEstCero
+  facexy [xcor] of estudiante 0 [ycor] of estudiante 0
+  caminar heading direccionMarcha
+end
+
+to-report direccionMarcha
+  report (
+    ;([esCalle?] of patch-here and [esCarrera?] of patch-here) or
+    ;(
+      (max (list (roads-en 0 1) (roads-en 0 -1)))> (max (list (roads-en 1 0) (roads-en -1 0)))
+    ;)
+  )
+end
+
+to-report roads-en [d-x d-y]
+  let p patch-at d-x d-y
+  if p = nobody [ report 0 ]
+  report [roads] of p
+end
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+to caminar [angle vertical?]
+  let orientacion int (angle / 90)
+  ifelse (q_calle? and q_carrera?)
+  [ifelse angle mod 90 = 0 [marchar angle][ifelse vertical? [ifelse(orientacion = 0 or orientacion = 4)
+  [marchar arriba][marchar abajo]]
+    [ifelse(orientacion = 0 or orientacion = 1)[marchar derecha][marchar izquierda] ] ]
+  ]
+
+  [
+    if q_calle? [
+      ifelse(orientacion = 0 or orientacion = 4)
+      [marchar arriba]
+      [marchar abajo]
+    ]
+    if q_carrera? [
+      ifelse(orientacion = 0 or orientacion = 1)
+      [marchar derecha]
+      [marchar izquierda]
+    ]
+  ]
+end
+
+;;-------------------------------------------------------
+;;acciones contra la policia, el radio del grafity es de dos
+
+to grafity_Est
+  if ( pintura? and random 100 > 95)[
+    ask patches in-radius 2 [
+      if q_bloque?
+      [ set e_pintado? true ]
+    ]
+    enojar self
+  ]
+end
+
+
+to actuarInfiltrado
+
+  if ( infiltrado? and random 100 > 98)[
+    ask patch-here
+    [ set cant_fuego 60 ]
+    enojar self
+  ]
+end
+
+to move_Pol
+  if enojado? [
+    if est_enmira != nobody
+    [
+      if ( random 100 > tolerancia_Policias)
+      [
+        ir_lugar ([xcor] of est_enmira) ([ycor] of est_enmira)
+        if distance est_enmira < 5
+        [
+          lanzar_granada est_enmira
+          ;ask est_enmira [ set color red ]
+        ]
+
+        if any? estudiantes in-radius 7 [ lanzar_granada min-one-of estudiantes in-radius 7 [distance myself]]
+        ask patches in-radius 7 [ ask estudiantes-here [ actuarInfiltrado ]]
+      ]
+    ]
+  ]
+end
+
+
+
+to enojar [ estPichon ]
+  ask policias [if  not enojado?
+    [
+      set enojado? true
+      set est_enmira estPichon
+    ]
+  ]
+end
+
+;;aqui segun la tolerancia le da la cantidad de gas --------------------------------------------
+to lanzar_granada [granada]
+  ask granada[if ((xcor < (x-destino - 5) or ycor < (y-destino - 5)) and (xcor > 5 or ycor > 6) )
+    [ask patch-here [ if (random 100 = 1 or cant_gas < 0.005) [ set cant_gas tolerancia_Policias ]]]
+  ]
+  set enojado? false
+end
+
+
+
+to marchar[angle]
+  set heading angle
+  if can_move 2 [fd 1]
+end
+
+to-report can_move [distancia]
+  report (can-move? distancia and
+    (
+      ([q_final?] of patch-ahead distancia) or (
+        (not [q_bloque?] of patch-ahead distancia) and (not any? estudiantes-on patch-ahead distancia)
+      )
+    )
+  )
+end
+
+
+
+
+
+to correr
+  if random 100 > resistenciaEst [set resistencia false]
+
+  let gasAdelante gas-en 0
+  let gasDerecha gas-en 90
+  let gasIzquierda gas-en 270
+  let gasAtras gas-en 180
+
+  let rand (random 100 > 50 )
+
+  if (max (list gasAdelante gasDerecha gasIzquierda gasAtras) = gasAtras)
+  [ caminar heading rand ]
+
+  if (max (list gasAdelante gasDerecha gasIzquierda gasAtras) = gasAdelante)
+  [ caminar (heading + 180) rand ]
+
+  if (max (list gasAdelante gasDerecha gasIzquierda gasAtras) = gasIzquierda)
+  [ caminar (heading + 270) rand ]
+
+  if (max (list gasAdelante gasDerecha gasIzquierda gasAtras) = gasDerecha)
+  [ caminar (heading + 90) rand ]
+end
+
+
+
+to-report gas-en [angle]
+  let p patch-right-and-ahead angle 1
+  if p = nobody [ report 0 ]
+  report [cant_gas] of p
+end
+
+
+
+
 
 to setup-patch
 
-  ask patches [
 
-
-    set q_bloque? true
-    set q_calle? false
-    set q_carrera? false
-    set e_pintado? false
-    set e_gaseado? false
-    ;;set nivelGas 0
-    ;;set nivelFuego 0
-    set roads 0
-
-    if ((pxcor mod n_calles < 5) or (pxcor >= world-width - 5))[
-      set q_calle? true
-      set q_bloque? false
-    ]
-
-    if ((pycor mod n_carreras < 5 ) or (pycor >= world-height - 5))[
-      set q_carrera? true
-      set q_bloque? false
-    ]
-
-
-  ]
   ;set roads patches with
    ; [(floor((pxcor + max-pxcor - floor(grid-x-inc - 50)) mod grid-x-inc) = 0) or
     ;(floor((pycor + max-pycor - floor(grid-y-inc - 50)) mod grid-y-inc) = 0)]
 
 
   ;ask roads [ set pcolor white ]
-  ask patches [
-    if q_calle? [ set pcolor white ]
-    if q_carrera? [ set pcolor white ]
 
-  ;;  ifelse (nivelGas >= nivelFuego)
-    ;;[ if(nivelGas > 0.05) [ set pcolor scale-color yellow nivelGas 0.01 1 ]]
-    ;;[ if(nivelFuego > 0.05) [ set pcolor scale-color red nivelFuego 0.01 1 ]]
-
-    ;;if esFinal? [ set pcolor white ]
-    if q_bloque? [ set pcolor black ]
-    if q_bloque? and e_pintado? [ set pcolor one-of [ blue violet ]]
-    if e_pintado? [ set pcolor magenta ]
-  ]
 
 
 
@@ -180,13 +417,13 @@ end
 
 
 
-to encontrar-compañeros
-  set compañeros other estudiantes in-radius resistenciaEstudiantil ;;esta podra ser la resistencia
-end
+;;to encontrar-compañeros
+  ;;set compañeros other estudiantes in-radius resistenciaEst ;;esta podra ser la resistencia
+;;end
 
-to encontrar-compañero-cercano
-  set compañero-cercano min-one-of compañeros [distance myself]
-end
+;to encontrar-compañero-cercano
+ ; set compañero-cercano min-one-of compañeros [distance myself]
+;end
 
 
 to-report estudiante-color
@@ -196,12 +433,17 @@ end
 to-report policia-color
   report red
 end
+
+
+
+
+
 @#$#@#$#@
 GRAPHICS-WINDOW
-290
-36
-1124
-358
+24
+16
+858
+338
 -1
 -1
 6.403101
@@ -225,85 +467,85 @@ ticks
 30.0
 
 SLIDER
-23
-18
-236
-51
+884
+10
+1097
+43
 nEstudiantes
 nEstudiantes
 0
 100
-93.0
+96.0
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-26
-340
-213
-373
+893
+222
+1080
+255
 nEsmad
 nEsmad
 1
 30
-25.0
+16.0
 3
 1
 NIL
 HORIZONTAL
 
 SLIDER
-23
-57
-237
+884
+49
+1098
+82
+resistenciaEst
+resistenciaEst
+0
+100
+18.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+893
+266
+1083
+299
+tolerancia_Policias
+tolerancia_Policias
+0
+100
+20.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+884
 90
-resistenciaEstudiantil
-resistenciaEstudiantil
-0
-100
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-26
-384
-214
-417
-toleranciaEsmad
-toleranciaEsmad
-0
-100
-0.0
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-23
-98
-237
-131
+1098
+123
 porc_infiltrados
 porc_infiltrados
 1
 100
-5.0
+1.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-27
-431
-100
-464
+412
+369
+485
+402
 NIL
 setup
 NIL
@@ -317,25 +559,25 @@ NIL
 1
 
 SLIDER
-22
-140
-235
-173
+883
+132
+1096
+165
 porc_pintura
 porc_pintura
 1
 100
-10.0
+65.0
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-114
-432
-177
-465
+499
+370
+562
+403
 NIL
 go
 T
@@ -349,10 +591,10 @@ NIL
 1
 
 SLIDER
-24
-183
-116
-216
+34
+394
+126
+427
 calles
 calles
 1
@@ -364,10 +606,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-120
-185
-236
-218
+34
+428
+126
+461
 carreras
 carreras
 1
@@ -379,12 +621,32 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-1162
-65
-1312
-95
+35
+339
+142
+388
 El mundo propuesto es de 3 x 3 cuadros
 12
+0.0
+1
+
+TEXTBOX
+212
+348
+388
+423
+Hecho por:\n\nJOHN JANER CASTELLANOS\nESTEBAN ELIAS\n
+12
+115.0
+1
+
+TEXTBOX
+649
+351
+1054
+561
+Circulos Naranjas: Infiltrados con sus bombas\nCirculos Amarillos: Gases del ESMAD\n\nPERROS: Los perros del ESMAD\nPersona verde: ESTUDIANTE\nPersona Cafe: INFILTRADO\n\nPLAZA BOLIVAR: AZUL
+14
 0.0
 1
 
